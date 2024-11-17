@@ -16,6 +16,10 @@ class User(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    
+class Login(BaseModel):
+    email: EmailStr
+    password: str
 
 @auth_router.post("/register")
 def register(user: User, db: Session = Depends(get_db)):
@@ -34,12 +38,12 @@ def register(user: User, db: Session = Depends(get_db)):
     return {"message": "User registered successfully"}
 
 @auth_router.post("/login", response_model=Token)
-def login(email: EmailStr, password: str, db: Session = Depends(get_db)):
-    user = db.query(UserModel).filter(UserModel.email == email).first()
-    if not user or not verify_password(password, user.password):
+def login(user: Login, db: Session = Depends(get_db)):
+    existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
+    if not existing_user or not verify_password(user.password, existing_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": email, "is_admin": user.is_admin})
+    access_token = create_access_token(data={"sub": user.email, "is_admin": existing_user.is_admin})
     return {"access_token": access_token, "token_type": "bearer"}
 
 def get_current_user(token: str = Depends(lambda: None), db: Session = Depends(get_db)):
