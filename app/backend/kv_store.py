@@ -44,7 +44,7 @@ class KVStore:
         entry = self.session.query(KeyValue).filter(KeyValue.key == key).first()
         if not entry:
             return {"status": "error", "message": f"Key '{key}' does not exist."}
-        return {"status": "success", "data": {"key": entry.key, "value": entry.value}}
+        return {"status": "success", "message": f"Key {entry.key} Value: {entry.value}","data": {"key": entry.key, "value": entry.value}}
 
     def get_revisions(self, key: str):
         """Retrieve all revisions for a given key."""

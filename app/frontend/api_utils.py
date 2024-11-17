@@ -44,7 +44,7 @@ def call_api(endpoint, method="GET", data=None):
     elif method == "PUT":
         response = requests.put(url, headers=headers, json=data)
     elif method == "DELETE":
-        response = requests.delete(url, headers=headers, json=data)
+        response = requests.delete(url, headers=headers, params=data)
     else:
         return {"error": "Invalid HTTP method"}
     try:

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 from .auth import get_current_user
@@ -25,9 +25,12 @@ def insert_kv(
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    kv_store.insert(data.key, data.value)
-
-    return {"message": f"Key {data.key} inserted with value {data.value}"}
+    output = kv_store.insert(data.key, data.value)
+    
+    if output["status"] == "error":
+        raise HTTPException(status_code=400, detail=output["message"])
+    
+    return output
 
 
 @kv_router.put("/update")
@@ -39,9 +42,10 @@ def update_kv(
     print(user)
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
-    kv_store.update(data.key, data.value)
-    return {"message": f"Key {data.key} updated to value {data.value}"}
-
+    output = kv_store.update(data.key, data.value)
+    if output["status"] == "error":
+        raise HTTPException(status_code=400, detail=output["message"])
+    return output
 
 @kv_router.delete("/delete")
 def delete_kv(
@@ -49,16 +53,17 @@ def delete_kv(
 ):
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
-    kv_store.delete(key)
-    return {"message": f"Key {key} deleted"}
+    output = kv_store.delete(key)
+    if output["status"] == "error":
+        raise HTTPException(status_code=400, detail=output["message"])
+    return output
 
-
-@kv_router.get("/get", response_model=KVRequest)
+@kv_router.get("/get")
 def get_kv(key: str, kv_store: KVStore = Depends(get_kv_store)):
     result = kv_store.get(key)
     if result["status"] == "error":
         raise HTTPException(status_code=404, detail=result["message"])
-    return KVRequest(key=result["data"]["key"], value=result["data"]["value"])
+    return {"status": "success", "data": result["data"], "message": f"Key: {result['data']['key']} Value: {result['data']['value']}"}
 
 @kv_router.get("/get_revisions")
 def get_kv_revs(key: str, kv_store: KVStore = Depends(get_kv_store)):
@@ -149,4 +154,4 @@ async def control_kv(
             )
 
     # Return the result summary
-    return {"status": "completed", "results": results}
+    return results

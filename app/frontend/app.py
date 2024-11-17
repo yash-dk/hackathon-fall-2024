@@ -30,7 +30,8 @@ def perform_kv_action(action, key, value=None):
         return {"error": "Invalid action"}
     
     response = call_api(endpoint, method, data)
-    return response
+    print(response)
+    return response.get("message", "Unknown error") if response.get("status") == "success" else response.get("detail", "Unknown error")
 
 # Fetch key revisions
 def get_revisions(key):
@@ -75,7 +76,11 @@ def get_all_pairs():
 # LLM control
 def control_kv(prompt):
     response = call_api("/llm/control-kv", method="POST", data={"prompt": prompt})
-    return response
+    output = ""
+    for resp in response:
+        output += f"{resp["status"]}: {resp['message']}\n"
+        
+    return output
 
 # Gradio UI
 with gr.Blocks() as app:
