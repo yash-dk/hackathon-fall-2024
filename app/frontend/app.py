@@ -35,18 +35,42 @@ def perform_kv_action(action, key, value=None):
 # Fetch key revisions
 def get_revisions(key):
     """
-    Fetch all revisions for a specific key.
+    Fetch all revisions for a specific key and display as a table.
     """
     response = call_api("/kv/get_revisions", method="GET", data={"key": key})
-    return response
+    
+    if response.get("status") == "success":
+        revisions = response["data"]
+        table_data = [["Revision Number", "Value", "Created At"]]  # Table header
+        for rev in revisions:
+            table_data.append([
+                rev["revision_number"], 
+                rev["value"], 
+                rev["created_at"]
+            ])
+        return table_data
+    return [["Error"], [response.get("message", "Unknown error")]]
 
-# Fetch all key-value pairs
+
+
 def get_all_pairs():
     """
-    Fetch all key-value pairs from the KV store.
+    Fetch all key-value pairs from the KV store and display as a table.
     """
     response = call_api("/kv/get_all_pairs", method="GET")
-    return response
+    print(response)
+    
+    if response.get("status") == "success":
+        pairs = response["data"]
+        table_data = [["Key", "Value"]]  # Table header
+        for pair in pairs:
+            table_data.append([
+                pair["key"], 
+                pair["value"]
+            ])
+        return table_data
+    return [["Error"], [response.get("message", "Unknown error")]]
+
 
 # LLM control
 def control_kv(prompt):
@@ -56,8 +80,8 @@ def control_kv(prompt):
 # Gradio UI
 with gr.Blocks() as app:
     gr.Markdown("# KV Store Frontend with LLM Integration")
-    
-    # Registration
+
+    # Registration Tab
     with gr.Tab("Register"):
         gr.Markdown("## Register a new user")
         email_input = gr.Textbox(label="Email")
@@ -66,8 +90,8 @@ with gr.Blocks() as app:
         register_button = gr.Button("Register")
         register_output = gr.Textbox(label="Register Response")
         register_button.click(register, inputs=[email_input, password_input, is_admin_input], outputs=register_output)
-    
-    # Login
+
+    # Login Tab
     with gr.Tab("Login"):
         gr.Markdown("## Login")
         login_email_input = gr.Textbox(label="Email")
@@ -75,8 +99,8 @@ with gr.Blocks() as app:
         login_button = gr.Button("Login")
         login_output = gr.Textbox(label="Login Response")
         login_button.click(login, inputs=[login_email_input, login_password_input], outputs=login_output)
-    
-    # KV Store Actions
+
+    # KV Store Actions Tab
     with gr.Tab("KV Store"):
         gr.Markdown("## Perform KV Store Actions")
         with gr.Accordion("Key-Value Operations", open=False):
@@ -86,25 +110,26 @@ with gr.Blocks() as app:
             kv_button = gr.Button("Perform Action")
             kv_output = gr.Textbox(label="KV Store Response")
             kv_button.click(perform_kv_action, inputs=[action_dropdown, key_input, value_input], outputs=kv_output)
-        
+
         with gr.Accordion("Get Revisions", open=False):
             key_revisions_input = gr.Textbox(label="Key")
             revisions_button = gr.Button("Get Revisions")
-            revisions_output = gr.JSON(label="Revisions")
+            revisions_output = gr.Dataframe(label="Revisions Table", col_count=3)
             revisions_button.click(get_revisions, inputs=[key_revisions_input], outputs=revisions_output)
 
         with gr.Accordion("Get All Key-Value Pairs", open=False):
             all_pairs_button = gr.Button("Get All Pairs")
-            all_pairs_output = gr.JSON(label="All Key-Value Pairs")
+            all_pairs_output = gr.Dataframe(label="All Key-Value Pairs Table", col_count=2)
             all_pairs_button.click(get_all_pairs, inputs=[], outputs=all_pairs_output)
 
-    # Control KV via LLM
+    # Control KV via LLM Tab
     with gr.Tab("LLM Control"):
         gr.Markdown("## Control KV Store via LLM")
         prompt_input = gr.Textbox(label="Prompt")
         llm_button = gr.Button("Send Prompt")
         llm_output = gr.Textbox(label="LLM Response")
         llm_button.click(control_kv, inputs=[prompt_input], outputs=llm_output)
+
 
 # Launch the app
 app.launch()

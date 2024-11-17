@@ -65,7 +65,7 @@ def get_kv_revs(key: str, kv_store: KVStore = Depends(get_kv_store)):
     result = kv_store.get_revisions(key)
     if result["status"] == "error":
         raise HTTPException(status_code=404, detail=result["message"])
-    return result["data"]
+    return {"status": "success", "data": result["data"]}
 
 @kv_router.get("/get_all_pairs")
 def get_all_kv(kv_store: KVStore = Depends(get_kv_store)):

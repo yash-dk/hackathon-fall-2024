@@ -47,5 +47,7 @@ def call_api(endpoint, method="GET", data=None):
         response = requests.delete(url, headers=headers, json=data)
     else:
         return {"error": "Invalid HTTP method"}
-
-    return response.text
+    try:
+        return response.json()
+    except json.JSONDecodeError:
+        return response.text
