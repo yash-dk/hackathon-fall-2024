@@ -5,6 +5,8 @@ from .api.main import app
 
 # Load environment variables or manually set API details
 API_TYPE = "gemini"  # Specify "gemini" to use the Gemini API
+API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = os.getenv("OPEN_AI_API_KEY")
 
 def main():
     # Initialize the LLMProcessor with Gemini API details
@@ -35,6 +37,8 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     # Use `api.main:app` to reference the FastAPI instance in `api/main.py`
+    import dotenv
+    dotenv.load_dotenv()
     uvicorn.run(app, host="127.0.0.1", port=8000)
 
     # main()
