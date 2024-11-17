@@ -16,47 +16,76 @@ class KVRequest(BaseModel):
 
 
 @kv_router.post("/insert")
-def insert_kv(data: KVRequest, user=Depends(get_current_user)):
+def insert_kv(
+    data: KVRequest,
+    user=Depends(get_current_user),
+    kv_store: KVStore = Depends(get_kv_store),
+):
+    print(user)
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
-    # Insert logic here
+
+    kv_store.insert(data.key, data.value)
+
     return {"message": f"Key {data.key} inserted with value {data.value}"}
 
 
 @kv_router.put("/update")
-def update_kv(data: KVRequest, user=Depends(get_current_user)):
+def update_kv(
+    data: KVRequest,
+    user=Depends(get_current_user),
+    kv_store: KVStore = Depends(get_kv_store),
+):
+    print(user)
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
-    # Update logic here
+    kv_store.update(data.key, data.value)
     return {"message": f"Key {data.key} updated to value {data.value}"}
 
 
 @kv_router.delete("/delete")
-def delete_kv(key: str, user=Depends(get_current_user)):
+def delete_kv(
+    key: str, user=Depends(get_current_user), kv_store: KVStore = Depends(get_kv_store)
+):
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
-    # Delete logic here
+    kv_store.delete(key)
     return {"message": f"Key {key} deleted"}
 
 
-@kv_router.get("/get")
-def get_kv(key: str):
-    # Fetch logic here
-    return {"key": key, "value": "mock_value"}
+@kv_router.get("/get", response_model=KVRequest)
+def get_kv(key: str, kv_store: KVStore = Depends(get_kv_store)):
+    result = kv_store.get(key)
+    if result["status"] == "error":
+        raise HTTPException(status_code=404, detail=result["message"])
+    return KVRequest(key=result["data"]["key"], value=result["data"]["value"])
 
+@kv_router.get("/get_revisions")
+def get_kv_revs(key: str, kv_store: KVStore = Depends(get_kv_store)):
+    result = kv_store.get_revisions(key)
+    if result["status"] == "error":
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result["data"]
+
+@kv_router.get("/get_all_pairs")
+def get_all_kv(kv_store: KVStore = Depends(get_kv_store)):
+    return kv_store.get_all_key_values()
 
 @llm_router.post("/raw/query")
 def raw_query(prompt: str, user=Depends(get_current_user)):
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
-    # LLM query logic here
+    
+    # TODO implement raw LLM query
+    
     return {"message": "LLM queried successfully"}
+
 
 @llm_router.post("/control-kv")
 async def control_kv(
     request: dict,
     llm_processor=Depends(get_llm_processor),
-    kv_store: KVStore = Depends(get_kv_store),  # Inject KVStore instance
+    kv_store: KVStore = Depends(get_kv_store), 
 ):
     """
     HTTP endpoint for controlling the KV store through LLM.

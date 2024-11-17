@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel, EmailStr
 from .database import UserModel, get_db
 from sqlalchemy.orm import Session
@@ -46,12 +46,22 @@ def login(user: Login, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.email, "is_admin": existing_user.is_admin})
     return {"access_token": access_token, "token_type": "bearer"}
 
-def get_current_user(token: str = Depends(lambda: None), db: Session = Depends(get_db)):
+def get_current_user(authorization: str = Header(...), db: Session = Depends(get_db)):
+    """
+    Extract and validate the user from the Bearer token in the Authorization header.
+    """
+    # Extract the token from the Authorization header
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    token = authorization.split(" ")[1]
+
+    # Decode and validate the token
     payload = decode_access_token(token)
     email = payload.get("sub")
     if email is None:
         raise HTTPException(status_code=401, detail="Invalid token")
     
+    # Fetch the user from the database
     user = db.query(UserModel).filter(UserModel.email == email).first()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")

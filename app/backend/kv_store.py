@@ -79,3 +79,11 @@ class KVStore:
         self.session.delete(entry)
         self.session.commit()
         return {"status": "success", "message": f"Key '{key}' deleted successfully."}
+
+    def get_all_key_values(self):
+        """Retrieve all key-value pairs."""
+        entries = self.session.query(KeyValue).all()
+        return {
+            "status": "success",
+            "data": [{"key": entry.key, "value": entry.value} for entry in entries],
+        }

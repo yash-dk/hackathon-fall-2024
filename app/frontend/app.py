@@ -32,6 +32,22 @@ def perform_kv_action(action, key, value=None):
     response = call_api(endpoint, method, data)
     return response
 
+# Fetch key revisions
+def get_revisions(key):
+    """
+    Fetch all revisions for a specific key.
+    """
+    response = call_api("/kv/get_revisions", method="GET", data={"key": key})
+    return response
+
+# Fetch all key-value pairs
+def get_all_pairs():
+    """
+    Fetch all key-value pairs from the KV store.
+    """
+    response = call_api("/kv/get_all_pairs", method="GET")
+    return response
+
 # LLM control
 def control_kv(prompt):
     response = call_api("/llm/control-kv", method="POST", data={"prompt": prompt})
@@ -63,12 +79,24 @@ with gr.Blocks() as app:
     # KV Store Actions
     with gr.Tab("KV Store"):
         gr.Markdown("## Perform KV Store Actions")
-        action_dropdown = gr.Dropdown(["Insert", "Update", "Delete", "Get"], label="Action")
-        key_input = gr.Textbox(label="Key")
-        value_input = gr.Textbox(label="Value (Optional)")
-        kv_button = gr.Button("Perform Action")
-        kv_output = gr.Textbox(label="KV Store Response")
-        kv_button.click(perform_kv_action, inputs=[action_dropdown, key_input, value_input], outputs=kv_output)
+        with gr.Accordion("Key-Value Operations", open=False):
+            action_dropdown = gr.Dropdown(["Insert", "Update", "Delete", "Get"], label="Action")
+            key_input = gr.Textbox(label="Key")
+            value_input = gr.Textbox(label="Value (Optional)")
+            kv_button = gr.Button("Perform Action")
+            kv_output = gr.Textbox(label="KV Store Response")
+            kv_button.click(perform_kv_action, inputs=[action_dropdown, key_input, value_input], outputs=kv_output)
+        
+        with gr.Accordion("Get Revisions", open=False):
+            key_revisions_input = gr.Textbox(label="Key")
+            revisions_button = gr.Button("Get Revisions")
+            revisions_output = gr.JSON(label="Revisions")
+            revisions_button.click(get_revisions, inputs=[key_revisions_input], outputs=revisions_output)
+
+        with gr.Accordion("Get All Key-Value Pairs", open=False):
+            all_pairs_button = gr.Button("Get All Pairs")
+            all_pairs_output = gr.JSON(label="All Key-Value Pairs")
+            all_pairs_button.click(get_all_pairs, inputs=[], outputs=all_pairs_output)
 
     # Control KV via LLM
     with gr.Tab("LLM Control"):
