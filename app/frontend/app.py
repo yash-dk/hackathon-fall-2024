@@ -76,6 +76,7 @@ def get_all_pairs():
 # LLM control
 def control_kv(prompt):
     response = call_api("/llm/control-kv", method="POST", data={"prompt": prompt})
+
     output = ""
     for resp in response:
         output += f"{resp["status"]}: {resp['message']}\n"

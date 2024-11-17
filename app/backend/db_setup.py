@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine, Column, String, DateTime, JSON, Integer, ForeignKey, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Use the new import path for declarative_base
 Base = declarative_base()
 
 class KeyValue(Base):
